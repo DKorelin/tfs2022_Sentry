@@ -1,6 +1,6 @@
 package ru.tinkoff.coursework.sentry.endpoints
 
-import ru.tinkoff.coursework.sentry.services.UserService
+import ru.tinkoff.coursework.sentry.services.UserServiceImpl
 import cats.effect._
 import org.http4s._
 import org.http4s.circe.CirceEntityCodec.circeEntityEncoder
@@ -8,7 +8,7 @@ import org.http4s.dsl.io._
 import org.http4s.circe.{jsonEncoderOf, jsonOf}
 import ru.tinkoff.coursework.sentry.entities.UserEntity
 
-class UserApi(userService: UserService) {
+class UserApi(userService: UserServiceImpl) {
   implicit def userEncoder: EntityEncoder[IO, UserEntity] = jsonEncoderOf
 
   implicit def userDecoder: EntityDecoder[IO, UserEntity] = jsonOf

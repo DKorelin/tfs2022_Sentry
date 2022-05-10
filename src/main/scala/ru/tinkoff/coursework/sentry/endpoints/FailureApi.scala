@@ -15,9 +15,9 @@ class FailureApi(failuresService: FailureService) {
   implicit def failureEventDecoder: EntityDecoder[IO, FailureEntity] = jsonOf
 
   val failureRoutes: HttpRoutes[IO] = HttpRoutes.of[IO] {
-    case GET -> Root / "failures" / IntVar(id) =>
-      failuresService.find(id).flatMap(Ok(_))
-    case req@POST -> Root / "failures" / UUIDVar(user) =>
+    case GET -> Root / "failures" / LongVar(id) =>
+      failuresService.findFailure(id).flatMap(Ok(_))
+    case req@POST -> Root / "failures" =>
       for {
         failureEvent <- req.as[FailureEntity]
         recordResult <- failuresService.recordFailure(failureEvent)

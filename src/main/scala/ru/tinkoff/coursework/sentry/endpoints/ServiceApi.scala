@@ -6,9 +6,9 @@ import org.http4s.circe.CirceEntityCodec.circeEntityEncoder
 import org.http4s.circe.{jsonEncoderOf, jsonOf}
 import org.http4s.dsl.io._
 import ru.tinkoff.coursework.sentry.entities.ServiceEntity
-import ru.tinkoff.coursework.sentry.services.ServiceService
+import ru.tinkoff.coursework.sentry.services.ServiceServiceImpl
 
-class ServiceApi(serviceService: ServiceService) {
+class ServiceApi(serviceService: ServiceServiceImpl) {
   implicit def serviceEncoder: EntityEncoder[IO, ServiceEntity] = jsonEncoderOf
 
   implicit def serviceDecoder: EntityDecoder[IO, ServiceEntity] = jsonOf

@@ -32,7 +32,10 @@ ThisBuild / libraryDependencies ++= Seq(
   //
   "com.h2database"  %  "h2"                % "2.1.210",
   "org.tpolecat" %% "doobie-core"      % doobieVersion,
-  "org.tpolecat" %% "doobie-h2"        % doobieVersion
+  "org.tpolecat" %% "doobie-h2"        % doobieVersion,
+  //
+  "org.scalamock" %% "scalamock" % "4.4.0" % Test,
+  "org.scalatest" %% "scalatest" % "3.2.2" % Test
 )
 
 

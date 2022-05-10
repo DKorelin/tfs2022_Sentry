@@ -5,11 +5,10 @@ import ru.tinkoff.coursework.sentry.entities.TagEntity
 
 import java.util.UUID
 
-class TagService {
-  def findTag(tag: String): IO[TagEntity] = ???
+trait TagService {
+  def findTag(tag: String): IO[TagEntity]
 
-  def createUserTag(userId: UUID, tagEntity: TagEntity): IO[Boolean] = ???
+  def createUserTag(userId: UUID, tagEntity: TagEntity): IO[Boolean]
 
-  def createServiceTag(serviceId: Long, tagEntity: TagEntity): IO[Boolean] = ???
-
+  def createServiceTag(serviceId: Long, tagEntity: TagEntity): IO[Boolean]
 }

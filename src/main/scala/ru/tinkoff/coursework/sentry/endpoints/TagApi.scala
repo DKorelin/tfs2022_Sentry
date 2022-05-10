@@ -6,9 +6,9 @@ import org.http4s.circe.CirceEntityCodec.circeEntityEncoder
 import org.http4s.circe.{jsonEncoderOf, jsonOf}
 import org.http4s.dsl.io._
 import ru.tinkoff.coursework.sentry.entities.TagEntity
-import ru.tinkoff.coursework.sentry.services.TagService
+import ru.tinkoff.coursework.sentry.services.TagServiceImpl
 
-class TagApi(tagService: TagService) {
+class TagApi(tagService: TagServiceImpl) {
   implicit def tagEncoder: EntityEncoder[IO, TagEntity] = jsonEncoderOf
 
   implicit def tagDecoder: EntityDecoder[IO, TagEntity] = jsonOf

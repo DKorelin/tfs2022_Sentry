@@ -8,11 +8,84 @@ import doobie.h2._
 import doobie.h2.implicits._
 import doobie.implicits.javasql._
 import doobie.util.transactor.Transactor.Aux
-import ru.tinkoff.coursework.sentry.entities.{FailureEntity, ServiceEntity, UserEntity}
+import ru.tinkoff.coursework.sentry.entities.{FailureEntity, JobEntity, ServiceEntity, UserEntity}
 
+import java.sql.Timestamp
 import java.util.UUID
 
 class SentryDatabase {
+  def findServiceById(id: Long): IO[Option[ServiceEntity]] = {
+    sql"""SELECT serviceTable.serviceId, serviceTable.URL
+      FROM failureTable WHERE serviceTable.serviceId = $id"""
+      .query[ServiceEntity]
+      .option
+      .transact(xa)
+  }
+
+  def findFailureById(id: Long): IO[Option[FailureEntity]] = {
+    sql"""SELECT failureTable.failureId, failureTable.URL, failureTable.description, failureTable.failureTime
+      FROM failureTable WHERE failureTable.failureId = $id"""
+      .query[FailureEntity]
+      .option
+      .transact(xa)
+  }
+
+  def findJobById(id: Long): IO[Option[JobEntity]] = {
+    sql"""SELECT jobTable.jobId, jobTable.serviceId, jobTable.description, jobTable.startTime, jobTable.endTime
+      FROM userTable WHERE jobTable.jobId = $id"""
+      .query[JobEntity]
+      .option
+      .transact(xa)
+  }
+
+  def createJob(userId: UUID, jobEntity: JobEntity): IO[Boolean] = {
+    for {
+      jobTableRecord <- createJobTableRecord(jobEntity)
+      jobUserTableRecord <- createJobUserTableRecord(userId,jobEntity)
+    } yield jobTableRecord && jobUserTableRecord
+  }
+
+  def createJobTableRecord(jobEntity: JobEntity): IO[Boolean] = {
+    sql"""
+      INSERT INTO jobTable (jobId, serviceId, description, startTime, endTime)
+      VALUES (${jobEntity.jobId}, ${jobEntity.serviceId}, ${jobEntity.description}, ${jobEntity.startTime}, ${jobEntity.endTime})
+      """
+      .update
+      .run
+      .map(_ > 0)
+      .transact(xa)
+  }
+
+  def createJobUserTableRecord(userId:UUID, jobEntity: JobEntity): IO[Boolean] = {
+    sql"""
+      INSERT INTO jobUserTable (userId,jobId)
+      VALUES ($userId, ${jobEntity.jobId})"""
+      .update
+      .run
+      .map(_ > 0)
+      .transact(xa)
+  }
+
+  def tagService(serviceId: Long, tag: String): _root_.cats.effect.IO[Boolean] = {
+    sql"""
+      INSERT INTO serviceTagTable (serviceId,tag)
+      VALUES ($serviceId,$tag)"""
+      .update
+      .run
+      .map(_ > 0)
+      .transact(xa)
+  }
+
+  def tagUser(userId: UUID, tag: String): IO[Boolean] = {
+    sql"""
+      INSERT INTO userTagTable (userId,tag)
+      VALUES ($userId,$tag)"""
+      .update
+      .run
+      .map(_ > 0)
+      .transact(xa)
+  }
+
   def tagUserToService(userId: UUID, serviceId: Long): IO[Boolean] = {
     sql"""
       INSERT INTO serviceUserSubscribeTable (userId,serviceId)
@@ -43,37 +116,60 @@ class SentryDatabase {
       .transact(xa)
   }
 
-  def findUserById(userId: UUID): IO[UserEntity] = {
+  def findUserById(userId: UUID): IO[Option[UserEntity]] = {
     sql"""SELECT userTable.userId, userTable.username, userTable.mail, userTable.cellphone
       FROM userTable WHERE userTable.userId = $userId"""
       .query[UserEntity]
-      .unique
+      .option
       .transact(xa)
   }
 
-  def getUsersById(alertIdList: Set[UUID]): IO[Set[UserEntity]] = {
-    alertIdList.toList
+  def getUsersById(userIdList: Set[UUID]): IO[Set[UserEntity]] = {
+    userIdList.toList
       .map(userId =>
-        findUserById(userId)
+        findUserById(userId).map(_.get)
       )
       .sequence
       .map(list => list.toSet)
   }
 
-  def getJobsIdByTagsId(tagList: Set[Long]): IO[Set[UUID]] = IO(Set.empty) //???
 
   def getUsersIdByServiceId(serviceId: Long): IO[Set[UUID]] = {
-    sql"""
-         SELECT serviceUserSubscribeTable.userId
-         FROM serviceUserSubscribeTable WHERE serviceUserSubscribeTable.serviceId = $serviceId """
+    sql"""SELECT serviceUserSubscribeTable.userId
+       FROM serviceUserSubscribeTable WHERE serviceUserSubscribeTable.serviceId = $serviceId """
       .query[UUID]
       .to[Set]
       .transact(xa)
   }
 
-  def getUsersIdByJobId(jobList: Any): IO[Set[UUID]] = IO(Set.empty) //???
+  def getUsersIdDutyInJobs(currentTime: Timestamp): IO[Set[UUID]] = {
+    sql"""SELECT jobUserTable.userId
+      FROM jobTable JOIN jobUserTable ON jobTable.jobId = jobUserTable.jobId
+      WHERE jobTable.startTime < $currentTime
+      AND jobTable.endTime > $currentTime
+     """
+      .query[UUID]
+      .to[Set]
+      .transact(xa)
+  }
 
-  def getUsersIdByTagsId(tagList: Set[Long]): IO[Set[UUID]] = IO(Set.empty) //???
+  def findUsersByTag(tag: String): IO[Set[UUID]] = {
+    sql"""SELECT userTagTable.userId
+      FROM userTagTable
+      WHERE userTagTable.tag = $tag"""
+      .query[UUID]
+      .to[Set]
+      .transact(xa)
+  }
+
+  def getUsersIdByTagsId(tagList: Set[String]): IO[Set[UUID]] = {
+    tagList.toList
+      .map(tag =>
+        findUsersByTag(tag)
+      )
+      .sequence
+      .map(list => list.flatten.toSet)
+  }
 
   val xa: Aux[IO, Unit] = Transactor.fromDriverManager[IO](
     "org.h2.Driver", "jdbc:h2:mem:default;DB_CLOSE_DELAY=-1", "sa", ""
@@ -94,7 +190,9 @@ class SentryDatabase {
       CREATE TABLE userTagTable (
         id long AUTO_INCREMENT PRIMARY KEY,
         userId UUID NOT NULL,
-        tag VARCHAR NOT NULL)
+        tag VARCHAR NOT NULL,
+        FOREIGN KEY (userId)  REFERENCES userTable (userId)
+        )
        """.update.run.transact(xa)
 
   val serviceScheme: IO[Int] =
@@ -141,12 +239,14 @@ class SentryDatabase {
       )
    """.update.run.transact(xa)
 
-  val jobUserSubscribeScheme: IO[Int] =
+  val jobUserScheme: IO[Int] =
     sql"""
-      CREATE TABLE jobUserSubscribeTable (
+      CREATE TABLE jobUserTable (
         id LONG AUTO_INCREMENT PRIMARY KEY,
         userId UUID NOT NULL,
-        jobId LONG NOT NULL)
+        jobId LONG NOT NULL,
+        FOREIGN KEY (jobId) REFERENCES jobTable (jobId)
+        )
        """.update.run.transact(xa)
 
   def writeFailure(failure: FailureEntity): IO[Int] = {
@@ -174,11 +274,11 @@ class SentryDatabase {
       .transact(xa)
   }
 
-  def getTagsIdByServiceId(serviceId: Long): IO[Set[Long]] = {
+  def getTagsIdByServiceId(serviceId: Long): IO[Set[String]] = {
     sql"""
          SELECT serviceTagTable.tag
          FROM serviceTagTable WHERE serviceTagTable.serviceId = $serviceId """
-      .query[Long]
+      .query[String]
       .to[Set]
       .transact(xa)
   }

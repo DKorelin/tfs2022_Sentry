@@ -1,18 +1,18 @@
 import cats.effect.{ExitCode, IO, IOApp}
 import ru.tinkoff.coursework.sentry.database.SentryDatabase
 import ru.tinkoff.coursework.sentry.entities.{ServiceEntity, UserEntity}
-import ru.tinkoff.coursework.sentry.services.ServiceService
+import ru.tinkoff.coursework.sentry.services.ServiceServiceImpl
 
 import java.util.UUID
 
 object ServiceServiceTest extends IOApp {
 
-  val database = new SentryDatabase
-  val demoUUID = UUID.randomUUID()
-  val demoUser = UserEntity(demoUUID, "bob", "dummy@mail.com", "8-800-555-35-35")
+  val database: SentryDatabase = new SentryDatabase
+  val demoUUID: UUID = UUID.randomUUID()
+  val demoUser: UserEntity = UserEntity(demoUUID, "bob", "dummy@mail.com", "8-800-555-35-35")
   val demoURL = "www.dummy.com"
-  val demoService = ServiceEntity(1, demoURL)
-  val serviceService = new ServiceService(database)
+  val demoService: ServiceEntity = ServiceEntity(1, demoURL)
+  val serviceService: ServiceServiceImpl = new ServiceServiceImpl(database)
 
   override def run(args: List[String]): IO[ExitCode] = {
     for {
