@@ -1,6 +1,6 @@
 import cats.effect.{ExitCode, IO, IOApp}
 import ru.tinkoff.coursework.sentry.alertManager.{AlertManager, AlertManagerImpl}
-import ru.tinkoff.coursework.sentry.database.SentryDatabase
+import ru.tinkoff.coursework.sentry.database.SentryDatabaseImpl
 import ru.tinkoff.coursework.sentry.entities.{FailureEntity, JobEntity, ServiceEntity, TagEntity, UserEntity}
 import ru.tinkoff.coursework.sentry.services.{FailureServiceImpl, JobServiceImpl, ServiceServiceImpl, TagServiceImpl, UserServiceImpl}
 
@@ -9,7 +9,7 @@ import java.time.LocalDateTime
 import java.util.UUID
 
 object ServicesDemo extends IOApp {
-  val database = new SentryDatabase
+  val database = new SentryDatabaseImpl
   val schemes: IO[Unit] = for {
     _ <- database.userScheme
     _ <- database.userTagScheme
@@ -53,7 +53,7 @@ object ServicesDemo extends IOApp {
       _ <- userService.createUser(demoUserByTag)
       _ <- userService.createUser(demoUserByJob)
       _ <- serviceService.createService(demoService)
-      _ <- serviceService.tagUserToService(demoUserByService.userId, demoService)
+      _ <- serviceService.assignUserToService(demoUserByService.userId, demoService)
       _ <- tagService.createUserTag(demoUserByTag.userId,demoTag)
       _ <- tagService.createUserTag(demoUserByService.userId,demoTag)
       _ <- tagService.createServiceTag(demoService.serviceId,demoTag)

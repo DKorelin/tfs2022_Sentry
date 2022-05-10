@@ -25,7 +25,7 @@ class ServiceApi(serviceService: ServiceServiceImpl) {
     case req@POST -> Root / "services" / "subscribe" / UUIDVar(userId) =>
       for {
         service <- req.as[ServiceEntity]
-        recordResult <- serviceService.tagUserToService(userId, service)
+        recordResult <- serviceService.assignUserToService(userId, service)
         resp <- Ok(recordResult)
       } yield resp
   }

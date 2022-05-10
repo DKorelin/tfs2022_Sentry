@@ -7,7 +7,7 @@ import ru.tinkoff.coursework.sentry.entities.UserEntity
 import java.util.UUID
 
 class UserServiceImpl(db: SentryDatabase) extends UserService {
-  def createUser(userEntity: UserEntity): IO[Int] = db.createUser(userEntity)
+  def createUser(userEntity: UserEntity): IO[Boolean] = db.createUser(userEntity)
 
   def findUser(id: UUID):IO[Option[UserEntity]] = db.findUserById(id)
 }

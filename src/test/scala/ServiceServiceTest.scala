@@ -1,5 +1,5 @@
 import cats.effect.{ExitCode, IO, IOApp}
-import ru.tinkoff.coursework.sentry.database.SentryDatabase
+import ru.tinkoff.coursework.sentry.database.SentryDatabaseImpl
 import ru.tinkoff.coursework.sentry.entities.{ServiceEntity, UserEntity}
 import ru.tinkoff.coursework.sentry.services.ServiceServiceImpl
 
@@ -7,7 +7,7 @@ import java.util.UUID
 
 object ServiceServiceTest extends IOApp {
 
-  val database: SentryDatabase = new SentryDatabase
+  val database: SentryDatabaseImpl = new SentryDatabaseImpl
   val demoUUID: UUID = UUID.randomUUID()
   val demoUser: UserEntity = UserEntity(demoUUID, "bob", "dummy@mail.com", "8-800-555-35-35")
   val demoURL = "www.dummy.com"
@@ -23,7 +23,7 @@ object ServiceServiceTest extends IOApp {
       _ <- IO(println(s"createUserResult $createUserResult"))
       createServiceResult <- serviceService.createService(demoService)
       _ <- IO(println(s"createServiceResult $createServiceResult"))
-      tagUserToServiceResult <- serviceService.tagUserToService(demoUUID, demoService)
+      tagUserToServiceResult <- serviceService.assignUserToService(demoUUID, demoService)
       _ <- IO(println(s"tagUserToServiceResult $tagUserToServiceResult"))
     } yield ExitCode.Success
   }

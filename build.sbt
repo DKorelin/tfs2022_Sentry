@@ -18,10 +18,8 @@ ThisBuild / libraryDependencies ++= Seq(
   "com.softwaremill.macwire" %% "macros" % "2.5.7",
   "com.beachape" %% "enumeratum" % "1.7.0",
   "com.beachape" %% "enumeratum-circe" % "1.7.0",
-  //
   "com.typesafe.akka" %% "akka-actor-typed" % AkkaVersion,
   "com.typesafe.akka" %% "akka-actor-testkit-typed" % AkkaVersion % Test,
-  //
   "org.http4s" %% "http4s-dsl" % http4sVersion,
   "org.http4s" %% "http4s-ember-server" % http4sVersion,
   "org.http4s" %% "http4s-circe" % http4sVersion,
@@ -29,14 +27,9 @@ ThisBuild / libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-http-testkit" % "10.2.8" % Test,
   "org.scalamock" %% "scalamock" % "4.4.0" % Test,
   "org.scalatest" %% "scalatest" % "3.2.2" % Test,
-  //
   "com.h2database"  %  "h2"                % "2.1.210",
   "org.tpolecat" %% "doobie-core"      % doobieVersion,
   "org.tpolecat" %% "doobie-h2"        % doobieVersion,
-  //
   "org.scalamock" %% "scalamock" % "4.4.0" % Test,
   "org.scalatest" %% "scalatest" % "3.2.2" % Test
 )
-
-
-ThisBuild / Test / parallelExecution := false

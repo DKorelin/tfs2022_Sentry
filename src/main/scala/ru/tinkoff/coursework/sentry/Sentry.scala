@@ -8,12 +8,12 @@ import org.http4s.ember.server.EmberServerBuilder
 import org.http4s.implicits.http4sKleisliResponseSyntaxOptionT
 import org.http4s.server.Router
 import ru.tinkoff.coursework.sentry.alertManager.{AlertManager, AlertManagerImpl}
-import ru.tinkoff.coursework.sentry.database.SentryDatabase
+import ru.tinkoff.coursework.sentry.database.SentryDatabaseImpl
 import ru.tinkoff.coursework.sentry.endpoints.{FailureApi, JobsApi, UserApi}
 import ru.tinkoff.coursework.sentry.services.{FailureServiceImpl, JobServiceImpl, ServiceServiceImpl}
 
 object Sentry extends IOApp {
-  val database = new SentryDatabase
+  val database = new SentryDatabaseImpl
   val alertManager: AlertManager = new AlertManagerImpl()
   val failureService = new FailureServiceImpl(database, alertManager)
   val failureApi: HttpRoutes[IO] = new FailureApi(failureService).failureRoutes
