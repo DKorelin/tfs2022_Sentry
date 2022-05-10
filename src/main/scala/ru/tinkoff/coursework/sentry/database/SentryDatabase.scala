@@ -14,6 +14,87 @@ import java.sql.Timestamp
 import java.util.UUID
 
 class SentryDatabase {
+
+  val xa: Aux[IO, Unit] = Transactor.fromDriverManager[IO](
+    "org.h2.Driver", "jdbc:h2:mem:default;DB_CLOSE_DELAY=-1", "sa", ""
+  )
+
+  val userScheme: IO[Int] =
+    sql"""
+      CREATE TABLE userTable (
+        userId UUID NOT NULL PRIMARY KEY,
+        username VARCHAR NOT NULL,
+        mail VARCHAR,
+        cellphone VARCHAR
+        )
+       """.update.run.transact(xa)
+
+  val userTagScheme: IO[Int] =
+    sql"""
+      CREATE TABLE userTagTable (
+        id long AUTO_INCREMENT PRIMARY KEY,
+        userId UUID NOT NULL,
+        tag VARCHAR NOT NULL,
+        FOREIGN KEY (userId)  REFERENCES userTable (userId)
+        )
+       """.update.run.transact(xa)
+
+  val serviceScheme: IO[Int] =
+    sql"""
+      CREATE TABLE serviceTable (
+        serviceId LONG NOT NULL PRIMARY KEY,
+        URL VARCHAR NOT NULL)
+   """.update.run.transact(xa)
+
+  val serviceTagScheme: IO[Int] =
+    sql"""
+      CREATE TABLE serviceTagTable (
+        id LONG AUTO_INCREMENT PRIMARY KEY,
+        serviceId LONG NOT NULL,
+        tag VARCHAR NOT NULL,
+        FOREIGN KEY (serviceId)  REFERENCES serviceTable (serviceId)
+        )
+       """.update.run.transact(xa)
+
+  val serviceUserSubscribeScheme: IO[Int] =
+    sql"""
+      CREATE TABLE serviceUserSubscribeTable (
+        id LONG AUTO_INCREMENT PRIMARY KEY,
+        userId UUID NOT NULL,
+        serviceId LONG NOT NULL)
+       """.update.run.transact(xa)
+
+  val failureScheme: IO[Int] =
+    sql"""
+      CREATE TABLE failureTable (
+        failureId LONG NOT NULL PRIMARY KEY,
+        URL VARCHAR NOT NULL,
+        description VARCHAR,
+        failureTime TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      )
+   """.update.run.transact(xa)
+
+  val jobScheme: IO[Int] =
+    sql"""
+      CREATE TABLE jobTable (
+        jobId LONG NOT NULL PRIMARY KEY,
+        serviceId LONG NOT NULL,
+        description VARCHAR,
+        startTime TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+        endTime TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+      )
+   """.update.run.transact(xa)
+
+  val jobUserScheme: IO[Int] =
+    sql"""
+      CREATE TABLE jobUserTable (
+        id LONG AUTO_INCREMENT PRIMARY KEY,
+        userId UUID NOT NULL,
+        jobId LONG NOT NULL,
+        FOREIGN KEY (jobId) REFERENCES jobTable (jobId)
+        )
+       """.update.run.transact(xa)
+
   def findServiceById(id: Long): IO[Option[ServiceEntity]] = {
     sql"""SELECT serviceTable.serviceId, serviceTable.URL
       FROM failureTable WHERE serviceTable.serviceId = $id"""
@@ -153,7 +234,7 @@ class SentryDatabase {
       .transact(xa)
   }
 
-  def findUsersByTag(tag: String): IO[Set[UUID]] = {
+  def findUserIdsByTag(tag: String): IO[Set[UUID]] = {
     sql"""SELECT userTagTable.userId
       FROM userTagTable
       WHERE userTagTable.tag = $tag"""
@@ -165,89 +246,29 @@ class SentryDatabase {
   def getUsersIdByTagsId(tagList: Set[String]): IO[Set[UUID]] = {
     tagList.toList
       .map(tag =>
-        findUsersByTag(tag)
+        findUserIdsByTag(tag)
       )
       .sequence
       .map(list => list.flatten.toSet)
   }
 
-  val xa: Aux[IO, Unit] = Transactor.fromDriverManager[IO](
-    "org.h2.Driver", "jdbc:h2:mem:default;DB_CLOSE_DELAY=-1", "sa", ""
-  )
+  def findUsersByTag(tag: String): IO[List[UserEntity]] = {
+    sql"""SELECT userTable.userId, userTable.username, userTable.mail, userTable.cellphone
+      FROM userTable JOIN userTagTable ON userTable.userId = userTagTable.userId
+      WHERE userTagTable.tag = $tag"""
+      .query[UserEntity]
+      .to[List]
+      .transact(xa)
+  }
 
-  val userScheme: IO[Int] =
-    sql"""
-      CREATE TABLE userTable (
-        userId UUID NOT NULL PRIMARY KEY,
-        username VARCHAR NOT NULL,
-        mail VARCHAR,
-        cellphone VARCHAR
-        )
-       """.update.run.transact(xa)
-
-  val userTagScheme: IO[Int] =
-    sql"""
-      CREATE TABLE userTagTable (
-        id long AUTO_INCREMENT PRIMARY KEY,
-        userId UUID NOT NULL,
-        tag VARCHAR NOT NULL,
-        FOREIGN KEY (userId)  REFERENCES userTable (userId)
-        )
-       """.update.run.transact(xa)
-
-  val serviceScheme: IO[Int] =
-    sql"""
-      CREATE TABLE serviceTable (
-        serviceId LONG NOT NULL PRIMARY KEY,
-        URL VARCHAR NOT NULL)
-   """.update.run.transact(xa)
-
-  val serviceTagScheme: IO[Int] =
-    sql"""
-      CREATE TABLE serviceTagTable (
-        id LONG AUTO_INCREMENT PRIMARY KEY,
-        serviceId LONG NOT NULL,
-        tag VARCHAR NOT NULL)
-       """.update.run.transact(xa)
-
-  val serviceUserSubscribeScheme: IO[Int] =
-    sql"""
-      CREATE TABLE serviceUserSubscribeTable (
-        id LONG AUTO_INCREMENT PRIMARY KEY,
-        userId UUID NOT NULL,
-        serviceId LONG NOT NULL)
-       """.update.run.transact(xa)
-
-  val failureScheme: IO[Int] =
-    sql"""
-      CREATE TABLE failureTable (
-        failureId LONG NOT NULL PRIMARY KEY,
-        URL VARCHAR NOT NULL,
-        description VARCHAR,
-        failureTime TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-      )
-   """.update.run.transact(xa)
-
-  val jobScheme: IO[Int] =
-    sql"""
-      CREATE TABLE jobTable (
-        jobId LONG NOT NULL PRIMARY KEY,
-        serviceId LONG NOT NULL,
-        description VARCHAR,
-        startTime TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-        endTime TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-      )
-   """.update.run.transact(xa)
-
-  val jobUserScheme: IO[Int] =
-    sql"""
-      CREATE TABLE jobUserTable (
-        id LONG AUTO_INCREMENT PRIMARY KEY,
-        userId UUID NOT NULL,
-        jobId LONG NOT NULL,
-        FOREIGN KEY (jobId) REFERENCES jobTable (jobId)
-        )
-       """.update.run.transact(xa)
+  def findServicesByTag(tag: String): IO[List[ServiceEntity]] = {
+    sql"""SELECT serviceTable.serviceId, serviceTable.URL
+      FROM serviceTable JOIN serviceTagTable ON serviceTable.serviceId = serviceTagTable.serviceId
+      WHERE serviceTagTable.tag = $tag"""
+      .query[ServiceEntity]
+      .to[List]
+      .transact(xa)
+  }
 
   def writeFailure(failure: FailureEntity): IO[Int] = {
     sql"""

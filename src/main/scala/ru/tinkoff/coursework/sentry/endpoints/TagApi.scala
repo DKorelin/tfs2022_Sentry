@@ -14,8 +14,10 @@ class TagApi(tagService: TagServiceImpl) {
   implicit def tagDecoder: EntityDecoder[IO, TagEntity] = jsonOf
 
   val tagRoutes: HttpRoutes[IO] = HttpRoutes.of[IO] {
-    case GET -> Root / "tags" / tag =>
-      tagService.findTag(tag).flatMap(Ok(_))
+    case GET -> Root / "tags" / "getUsers" /tag =>
+      tagService.findUsersByTag(tag).flatMap(Ok(_))
+    case GET -> Root / "tags" / "getServices" /tag =>
+      tagService.findServicesByTag(tag).flatMap(Ok(_))
     case req@POST -> Root / "tags" / "user" / UUIDVar(userId) =>
       for {
         tagEntity <- req.as[TagEntity]
