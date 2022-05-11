@@ -11,6 +11,7 @@ import java.util.UUID
 object ServicesDemo extends IOApp {
   val database = new SentryDatabaseImpl
   val schemes: IO[Unit] = for {
+    _ <- database.dropTables
     _ <- database.userScheme
     _ <- database.userTagScheme
     _ <- database.serviceScheme
