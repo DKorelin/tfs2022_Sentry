@@ -3,6 +3,7 @@ package ru.tinkoff.coursework.sentry
 import cats.data.Kleisli
 import cats.effect.{ExitCode, IO, IOApp}
 import com.comcast.ip4s.{Hostname, IpLiteralSyntax}
+import com.typesafe.scalalogging.LazyLogging
 import org.http4s.{HttpRoutes, Request, Response}
 import org.http4s.ember.server.EmberServerBuilder
 import org.http4s.implicits.http4sKleisliResponseSyntaxOptionT
@@ -12,7 +13,7 @@ import ru.tinkoff.coursework.sentry.database.SentryDatabaseImpl
 import ru.tinkoff.coursework.sentry.endpoints.{FailureApi, JobsApi, UserApi}
 import ru.tinkoff.coursework.sentry.services.{FailureServiceImpl, JobServiceImpl, ServiceServiceImpl}
 
-object Sentry extends IOApp {
+object Sentry extends IOApp with LazyLogging {
   val database = new SentryDatabaseImpl
   val alertManager: AlertManager = new AlertManagerImpl(database)
   val failureService = new FailureServiceImpl(database, alertManager)

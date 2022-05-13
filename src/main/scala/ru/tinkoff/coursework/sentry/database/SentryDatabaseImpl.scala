@@ -5,6 +5,7 @@ import cats.data._
 import cats.effect._
 import doobie._
 import cats.implicits._
+import com.typesafe.scalalogging.LazyLogging
 import doobie.implicits._
 import doobie.postgres._
 import doobie.postgres.implicits._
@@ -13,9 +14,10 @@ import doobie.implicits.legacy.instant._
 import doobie.implicits.legacy.localdate._
 import doobie.util.transactor.Transactor.Aux
 import ru.tinkoff.coursework.sentry.entities.{FailureEntity, JobEntity, ServiceEntity, UserEntity}
+
 import java.sql.Timestamp
 
-class SentryDatabaseImpl extends SentryDatabase {
+class SentryDatabaseImpl extends SentryDatabase with LazyLogging {
 
   val xa: Aux[IO, Unit] = Transactor.fromDriverManager[IO](
     "org.postgresql.Driver",

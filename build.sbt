@@ -8,6 +8,7 @@ lazy val http4sVersion = "1.0.0-M23"
 ThisBuild / libraryDependencies ++= Seq(
   "com.softwaremill.sttp.client3" %% "core" % "3.5.2",
   "com.softwaremill.sttp.client3" %% "httpclient-backend" % "3.5.2",
+  "com.softwaremill.sttp.client3" %% "async-http-client-backend-cats" % "3.5.2",
   "de.heikoseeberger" %% "akka-http-circe" % "1.39.2",
   "io.circe" %% "circe-core" % circeVersion,
   "io.circe" %% "circe-generic" % circeVersion,
@@ -34,6 +35,5 @@ ThisBuild / libraryDependencies ++= Seq(
   "org.scalatest" %% "scalatest" % "3.2.2" % Test,
   "com.bot4s" %% "telegram-core" % "5.4.2",
   "com.bot4s" %% "telegram-akka" % "5.4.2",
-  "org.typelevel" %% "cats-effect" % "3.3.11",
-  "com.softwaremill.sttp.client3" %% "async-http-client-backend-cats" % "3.6.1"
+  "org.typelevel" %% "cats-effect" % "3.3.11"
 )

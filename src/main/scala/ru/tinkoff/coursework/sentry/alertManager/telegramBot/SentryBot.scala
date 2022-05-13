@@ -13,18 +13,12 @@ import org.http4s.dsl.request
 import ru.tinkoff.coursework.sentry.alertManager.AlertManager
 import com.bot4s.telegram.methods._
 import com.bot4s.telegram.models._
-
-import scala.concurrent.duration._
 import scala.util.Try
 
 /**
- * Showcases different ways to declare commands (Commands + RegexCommands).
- *
- * Note that non-ASCII commands are not clickable.
- *
  * @param token Bot's token.
  */
-class SentryBot[F[_]: Async: Temporal](token: String,am : AlertManager)
+class SentryBot[F[_]: Async: Temporal](token: String,val am : AlertManager)
   extends ExampleBot[F](token)
     with Polling[F]
     with Commands[F]
@@ -47,10 +41,10 @@ class SentryBot[F[_]: Async: Temporal](token: String,am : AlertManager)
   }
 
   def sendToChat(chatId: ChatId,text:String): IO[Unit] = {
+    logger.info(s"entered sendToChat with chatId: $chatId, text: $text")
     for{
-      _ <- IO{println("bob")}
-      //_ <- request(SendMessage(chatId,text))
-      //_ <- println("AlertManager alerting users:")
+      _ <- request(SendMessage(chatId,text))
     }  yield ()
+    IO{()}
   }
 }
