@@ -14,8 +14,10 @@ class UserApi(userService: UserServiceImpl) {
   implicit def userDecoder: EntityDecoder[IO, UserEntity] = jsonOf
 
   val userRoutes: HttpRoutes[IO] = HttpRoutes.of[IO] {
-    case GET -> Root / "users" / UUIDVar(id) =>
+    case GET -> Root / "users" / LongVar(id) =>
       userService.findUser(id).flatMap(Ok(_))
+    case GET -> Root / "tags" / "getUsers" /tag =>
+      userService.findUsersByTag(tag).flatMap(Ok(_))
     case req@POST -> Root / "users" =>
       for {
         user <- req.as[UserEntity]

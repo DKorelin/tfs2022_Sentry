@@ -16,13 +16,15 @@ class ServiceApi(serviceService: ServiceServiceImpl) {
   val serviceRoutes: HttpRoutes[IO] = HttpRoutes.of[IO] {
     case GET -> Root / "services" / LongVar(id) =>
       serviceService.findService(id).flatMap(Ok(_))
+    case GET -> Root / "tags" / "getServices" /tag =>
+      serviceService.findServicesByTag(tag).flatMap(Ok(_))
     case req@POST -> Root / "services" =>
       for {
         service <- req.as[ServiceEntity]
         recordResult <- serviceService.createService(service)
         resp <- Ok(recordResult)
       } yield resp
-    case req@POST -> Root / "services" / "subscribe" / UUIDVar(userId) =>
+    case req@POST -> Root / "services" / "subscribe" / LongVar(userId) =>
       for {
         service <- req.as[ServiceEntity]
         recordResult <- serviceService.assignUserToService(userId, service)

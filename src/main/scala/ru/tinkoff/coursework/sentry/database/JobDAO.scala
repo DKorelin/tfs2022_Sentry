@@ -1,10 +1,10 @@
-package ru.tinkoff.coursework.sentry.services
+package ru.tinkoff.coursework.sentry.database
 
 import cats.effect.IO
 import ru.tinkoff.coursework.sentry.entities.JobEntity
 
-trait JobService {
-  def findJob(id: Long): IO[Option[JobEntity]]
-
+trait JobDAO {
   def createJob(userId: Long, jobEntity: JobEntity): IO[Boolean]
+
+  def findJobById(id: Long): IO[Option[JobEntity]]
 }

@@ -4,15 +4,13 @@ import io.circe.Decoder.Result
 import io.circe.generic.codec.DerivedAsObjectCodec.deriveCodec
 import io.circe.{Decoder, Encoder, HCursor, Json}
 
-import java.util.UUID
-
-case class UserEntity(userId: UUID, username: String, mail: String, cellphone: String)
+case class UserEntity(userId: Long, username: String, mail: String, cellphone: String)
 
 object UserEntity {
   implicit val jsonUserDecoder: Decoder[UserEntity] = new Decoder[UserEntity] {
     final def apply(c: HCursor): Result[UserEntity] = {
       for {
-        userId <- c.downField("userId").as[UUID]
+        userId <- c.downField("userId").as[Long]
         username <- c.downField("username").as[String]
         mail <- c.downField("mail").as[String]
         cellphone <- c.downField("cellphone").as[String]

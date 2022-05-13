@@ -31,5 +31,9 @@ ThisBuild / libraryDependencies ++= Seq(
   "org.tpolecat" %% "doobie-postgres" % doobieVersion,
   "org.tpolecat" %% "doobie-scalatest" % "1.0.0-RC1" % "test",
   "org.scalamock" %% "scalamock" % "4.4.0" % Test,
-  "org.scalatest" %% "scalatest" % "3.2.2" % Test
+  "org.scalatest" %% "scalatest" % "3.2.2" % Test,
+  "com.bot4s" %% "telegram-core" % "5.4.2",
+  "com.bot4s" %% "telegram-akka" % "5.4.2",
+  "org.typelevel" %% "cats-effect" % "3.3.11",
+  "com.softwaremill.sttp.client3" %% "async-http-client-backend-cats" % "3.6.1"
 )

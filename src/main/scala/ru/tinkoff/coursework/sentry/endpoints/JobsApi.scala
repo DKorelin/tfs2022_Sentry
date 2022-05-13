@@ -16,7 +16,7 @@ class JobsApi(jobService: JobServiceImpl) {
   val serviceRoutes: HttpRoutes[IO] = HttpRoutes.of[IO] {
     case GET -> Root / "jobs" / LongVar(id) =>
       jobService.findJob(id).flatMap(Ok(_))
-    case req@POST -> Root / "jobs" / UUIDVar(userId) =>
+    case req@POST -> Root / "jobs" / LongVar(userId) =>
       for {
         jobEntity <- req.as[JobEntity]
         recordResult <- jobService.createJob(userId, jobEntity)

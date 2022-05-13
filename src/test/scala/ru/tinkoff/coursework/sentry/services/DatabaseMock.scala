@@ -1,22 +1,22 @@
 package ru.tinkoff.coursework.sentry.services
 
 import cats.effect.IO
-import ru.tinkoff.coursework.sentry.database.SentryDatabase
+import ru.tinkoff.coursework.sentry.database.{JobDAO, SentryDatabase, ServiceDAO, TagDAO, UserDAO}
 import ru.tinkoff.coursework.sentry.entities.{FailureEntity, JobEntity, ServiceEntity, UserEntity}
+
 import java.sql.Timestamp
-import java.util.UUID
 import scala.collection.mutable.ListBuffer
 
-object DatabaseMock extends SentryDatabase{
+object DatabaseMock extends SentryDatabase with JobDAO with ServiceDAO with TagDAO with UserDAO{
   var listOfJobs: ListBuffer[JobEntity] = scala.collection.mutable.ListBuffer[JobEntity]()
   var listOfFailures: ListBuffer[FailureEntity] = scala.collection.mutable.ListBuffer[FailureEntity]()
   var listOfServices: ListBuffer[ServiceEntity] = scala.collection.mutable.ListBuffer[ServiceEntity]()
   var listOfUsers: ListBuffer[UserEntity] = scala.collection.mutable.ListBuffer[UserEntity]()
-  var userServicesMap = scala.collection.mutable.HashMap.empty[UUID,Long]
-  var userTagMap = scala.collection.mutable.HashMap.empty[UUID,String]
+  var userServicesMap = scala.collection.mutable.HashMap.empty[Long,Long]
+  var userTagMap = scala.collection.mutable.HashMap.empty[Long,String]
   var serviceTagMap = scala.collection.mutable.HashMap.empty[Long,String]
 
-  override def createJob(userId: UUID, jobEntity: JobEntity): IO[Boolean] = IO {
+  override def createJob(userId: Long, jobEntity: JobEntity): IO[Boolean] = IO {
     listOfJobs = jobEntity +: listOfJobs
     true
   }
@@ -41,12 +41,12 @@ object DatabaseMock extends SentryDatabase{
     true
   }
 
-  override def createUserTag(userId: UUID, tag: String): IO[Boolean] = IO{
+  override def createUserTag(userId: Long, tag: String): IO[Boolean] = IO{
     userTagMap.addOne(userId,tag)
     true
   }
 
-  override def assignUserToService(userId: UUID, serviceId: Long): IO[Boolean] = IO{
+  override def assignUserToService(userId: Long, serviceId: Long): IO[Boolean] = IO{
     userServicesMap.addOne(userId,serviceId)
     true
   }
@@ -63,7 +63,7 @@ object DatabaseMock extends SentryDatabase{
     listOfJobs.find(jobEntity => jobEntity.jobId == id)
   }
 
-  override def findUserById(userId: UUID): IO[Option[UserEntity]] = IO{
+  override def findUserById(userId: Long): IO[Option[UserEntity]] = IO{
     listOfUsers.find(userEntity => userEntity.userId == userId)
   }
 
@@ -96,4 +96,8 @@ object DatabaseMock extends SentryDatabase{
       case None => List.empty
     }
   }
+
+  override def bindUserWithTelegramChat(sentryId: Long, chatId: Long): IO[Boolean] = ???
+
+  override def getChatByUserId(userId: Long): IO[Long] = ???
 }

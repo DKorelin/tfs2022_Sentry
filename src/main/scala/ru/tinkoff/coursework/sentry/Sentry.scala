@@ -14,7 +14,7 @@ import ru.tinkoff.coursework.sentry.services.{FailureServiceImpl, JobServiceImpl
 
 object Sentry extends IOApp {
   val database = new SentryDatabaseImpl
-  val alertManager: AlertManager = new AlertManagerImpl()
+  val alertManager: AlertManager = new AlertManagerImpl(database)
   val failureService = new FailureServiceImpl(database, alertManager)
   val failureApi: HttpRoutes[IO] = new FailureApi(failureService).failureRoutes
   val services: HttpRoutes[IO] = failureApi

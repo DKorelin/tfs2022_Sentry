@@ -2,14 +2,15 @@ package ru.tinkoff.coursework.sentry.services
 
 import cats.effect.unsafe.implicits.global
 import org.scalatest.funsuite.AsyncFunSuite
-import ru.tinkoff.coursework.sentry.entities.ServiceEntity
-import java.util.UUID
+import ru.tinkoff.coursework.sentry.entities.{ServiceEntity, TagEntity}
+
 
 class ServiceServiceImplTest extends AsyncFunSuite {
-  val testUserId: UUID = UUID.fromString("123e4567-e89b-12d3-a456-426614174000")
+  val testUserId = 1
   val testServiceId = 2
   val testURL = "www.dummy.com"
   val testService: ServiceEntity = ServiceEntity(testServiceId,testURL)
+  val testTag: TagEntity = TagEntity("testTag")
 
   test("test createService") {
     val serviceService = new ServiceServiceImpl(DatabaseMock)
@@ -34,6 +35,17 @@ class ServiceServiceImplTest extends AsyncFunSuite {
       _ <- serviceService.createService(testService)
       _ <- serviceService.assignUserToService(testUserId,testService)
     } yield assert(DatabaseMock.userServicesMap.contains(testUserId))
+    testBody.unsafeRunSync()
+  }
+
+  test("test findServicesByTag") {
+    val tagService = new TagServiceImpl(DatabaseMock)
+    val serviceService = new ServiceServiceImpl(DatabaseMock)
+    DatabaseMock.listOfServices.addOne(testService)
+    val testBody = for {
+      _ <- tagService.createServiceTag(testServiceId, testTag)
+      receivedServices <- serviceService.findServicesByTag(testTag.tag)
+    } yield assert(receivedServices.contains(testService))
     testBody.unsafeRunSync()
   }
 }

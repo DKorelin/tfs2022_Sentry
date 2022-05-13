@@ -13,9 +13,10 @@ class FailureServiceImplTest extends AsyncFunSuite {
   val testTime: Timestamp = Timestamp.valueOf(LocalDateTime.parse("2007-12-03T10:15:30"))
   val testDescription = " Epic failure. Hacker is n00b1e"
   val expectedFailure: FailureEntity = FailureEntity(testFailureId, testURL, testDescription, testTime)
+  val alertManagerMock = new AlertManagerMock(DatabaseMock)
 
   test("test recordFailure") {
-    val failureService = new FailureServiceImpl(DatabaseMock, AlertManagerMock)
+    val failureService = new FailureServiceImpl(DatabaseMock, alertManagerMock)
     val testBody = for {
       _ <- DatabaseMock.createService(testService)
       _ <- failureService.recordFailure(expectedFailure)
@@ -24,7 +25,7 @@ class FailureServiceImplTest extends AsyncFunSuite {
   }
 
   test("test findFailure") {
-    val failureService = new FailureServiceImpl(DatabaseMock, AlertManagerMock)
+    val failureService = new FailureServiceImpl(DatabaseMock, alertManagerMock)
     val testBody = for {
       _ <- DatabaseMock.createService(testService)
       _ <- failureService.recordFailure(expectedFailure)
@@ -34,11 +35,11 @@ class FailureServiceImplTest extends AsyncFunSuite {
   }
 
   test("test recordFailure causes alert on alert manager") {
-    val failureService = new FailureServiceImpl(DatabaseMock, AlertManagerMock)
+    val failureService = new FailureServiceImpl(DatabaseMock, alertManagerMock)
     val testBody = for {
       _ <- DatabaseMock.createService(testService)
       _ <- failureService.recordFailure(expectedFailure)
-    } yield assert(AlertManagerMock.messageObjects.contains(AlertManagerMock.mockUser,expectedFailure))
+    } yield assert(alertManagerMock.messageObjects.contains(alertManagerMock.mockUser,expectedFailure))
     testBody.unsafeRunSync()
   }
 

@@ -1,7 +1,11 @@
 package ru.tinkoff.coursework.sentry.alertManager
 
-import ru.tinkoff.coursework.sentry.entities.{FailureEntity, UserEntity}
+import cats.effect.IO
+import ru.tinkoff.coursework.sentry.entities.FailureEntity
 
 trait AlertManager {
-  def alert(alertList: Set[UserEntity], failureEvent: FailureEntity):Unit
+  def bind(sentryId: Long, chatId: Long):IO[Boolean]
+
+
+  def alertSubscribers(serviceId: Long, failureEvent: FailureEntity): IO[Unit]
 }
