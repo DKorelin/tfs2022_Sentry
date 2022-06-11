@@ -4,11 +4,13 @@ lazy val circeVersion = "0.14.1"
 lazy val AkkaVersion = "2.6.19"
 lazy val doobieVersion = "1.0.0-RC1"
 lazy val http4sVersion = "1.0.0-M23"
+lazy val sttpVersion = "3.5.2"
+lazy val telegramVersion = "5.4.2"
 
 ThisBuild / libraryDependencies ++= Seq(
-  "com.softwaremill.sttp.client3" %% "core" % "3.5.2",
-  "com.softwaremill.sttp.client3" %% "httpclient-backend" % "3.5.2",
-  "com.softwaremill.sttp.client3" %% "async-http-client-backend-cats" % "3.5.2",
+  "com.softwaremill.sttp.client3" %% "core" % sttpVersion,
+  "com.softwaremill.sttp.client3" %% "httpclient-backend" % sttpVersion,
+  "com.softwaremill.sttp.client3" %% "async-http-client-backend-cats" % sttpVersion,
   "de.heikoseeberger" %% "akka-http-circe" % "1.39.2",
   "io.circe" %% "circe-core" % circeVersion,
   "io.circe" %% "circe-generic" % circeVersion,
@@ -30,10 +32,8 @@ ThisBuild / libraryDependencies ++= Seq(
   "org.scalatest" %% "scalatest" % "3.2.2" % Test,
   "org.tpolecat" %% "doobie-core"      % doobieVersion,
   "org.tpolecat" %% "doobie-postgres" % doobieVersion,
-  "org.tpolecat" %% "doobie-scalatest" % "1.0.0-RC1" % "test",
-  "org.scalamock" %% "scalamock" % "4.4.0" % Test,
-  "org.scalatest" %% "scalatest" % "3.2.2" % Test,
-  "com.bot4s" %% "telegram-core" % "5.4.2",
-  "com.bot4s" %% "telegram-akka" % "5.4.2",
+  "org.tpolecat" %% "doobie-scalatest" % doobieVersion % "test",
+  "com.bot4s" %% "telegram-core" % telegramVersion,
+  "com.bot4s" %% "telegram-akka" % telegramVersion,
   "org.typelevel" %% "cats-effect" % "3.3.11"
 )

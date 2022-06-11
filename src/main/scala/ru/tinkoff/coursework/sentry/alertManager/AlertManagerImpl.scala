@@ -3,40 +3,60 @@ package ru.tinkoff.coursework.sentry.alertManager
 import cats.effect.IO
 import com.typesafe.scalalogging.LazyLogging
 import ru.tinkoff.coursework.sentry.alertManager.telegramBot.SentryBot
-import ru.tinkoff.coursework.sentry.database.SentryDatabase
+import ru.tinkoff.coursework.sentry.database.{ServiceDAO, TagDAO, TelegramDAO, UserDAO}
 import ru.tinkoff.coursework.sentry.entities.{FailureEntity, UserEntity}
+import cats.implicits._
+import ru.tinkoff.coursework.sentry.ServiceIdNotFoundException
 
 import java.sql.Timestamp
 import java.time.LocalDateTime
 
-class AlertManagerImpl(db: SentryDatabase) extends AlertManager with LazyLogging{
-  val tokenMock = "this is a token mock"
-  private val telegramBot = new SentryBot[IO](tokenMock,this)
-  override def alertSubscribers(serviceId: Long, failureEvent: FailureEntity): IO[Unit] = {
-    for {
-      alertList <- getUsersByServiceId(serviceId)
-    } yield alert(alertList, failureEvent)
-  }
+class AlertManagerImpl(serviceDAO: ServiceDAO,
+                       tagDAO: TagDAO,
+                       userDAO: UserDAO,
+                       telegramDAO: TelegramDAO,
+                       telegramBot: Option[SentryBot] = None) extends AlertManager with LazyLogging {
 
-  override def bind(sentryId: Long, chatId: Long): IO[Boolean] = db.bindUserWithTelegramChat(sentryId,chatId)
+  override def alertSubscribers(failureEvent: FailureEntity): IO[List[Option[Int]]] = {
+    for {
+      serviceId <- serviceDAO.getServiceId(failureEvent.URL)
+      alertList <- serviceId match {
+        case Some(id) => getUsersByServiceId(id)
+        case None => throw ServiceIdNotFoundException()
+      }
+      alertResult <- alert(alertList, failureEvent)
+    } yield alertResult
+  }
 
   private def getUsersByServiceId(serviceId: Long): IO[Set[UserEntity]] = {
     for {
-      tagList <- db.getTagsByServiceId(serviceId)
-      userJobList <- db.getUsersDutyInJobs(Timestamp.valueOf(LocalDateTime.now()))
-      userTagList <- db.getUsersByTags(tagList)
-      userServiceList <- db.getUsersByServiceId(serviceId)
+      tagList <- tagDAO.getTagsByServiceId(serviceId)
+      userJobList <- userDAO.getUsersDutyInJobs(Timestamp.valueOf(LocalDateTime.now()))
+      userTagList <- userDAO.getUsersByTags(tagList)
+      userServiceList <- userDAO.getUsersByServiceId(serviceId)
       userList = userJobList ++ userTagList ++ userServiceList
     } yield userList
   }
 
-  private def alert(alertList: Set[UserEntity], failureEvent: FailureEntity): Unit = {
+  private def alert(alertList: Set[UserEntity], failureEvent: FailureEntity): IO[List[Option[Int]]] = {
     logger.info("AlertManager alerting users:")
-    alertList.foreach(userEntity => {
-      for {
-        chatId <- db.getChatByUserId(userEntity.userId)
-      } yield telegramBot.sendToChat(chatId, failureEvent.toString)
-    })
-    alertList.foreach(user => logger.info(s"user: $user. failure: $failureEvent"))
+    logger.info("alert list {}", alertList)
+    telegramBot match {
+      case None => IO(List.empty)
+      case Some(tgBot) =>
+        alertList.map(userEntity =>
+          telegramDAO.getChatByUserId(userEntity.userId).flatMap({
+            case Some(chatId) =>
+              logger.info(s"telegramBot.sendToChat chatId - $chatId, text - $failureEvent")
+              tgBot.sendToChat(chatId, createMessage(userEntity,failureEvent)).map(
+                m => Some(m.messageId))
+            case _ => IO(None)
+          })
+        ).toList.sequence
+    }
   }
+
+  private def createMessage(userEntity: UserEntity,failureEntity: FailureEntity):String =
+    s"${userEntity.username}, sentry registered failure at service ${failureEntity.URL}. " +
+    s"Failed at ${failureEntity.timestamp}. Description: ${failureEntity.description}"
 }

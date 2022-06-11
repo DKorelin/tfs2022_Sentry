@@ -1,6 +1,8 @@
 import cats.effect.{ExitCode, IO, IOApp}
+import ru.tinkoff.coursework.sentry.Sentry
+import ru.tinkoff.coursework.sentry.Sentry.xa
 import ru.tinkoff.coursework.sentry.alertManager.{AlertManager, AlertManagerImpl}
-import ru.tinkoff.coursework.sentry.database.{JobDAO, JobDAOImpl, SentryDatabaseImpl, ServiceDAOImpl, TagDAOImpl, UserDAOImpl}
+import ru.tinkoff.coursework.sentry.database.{FailureDAOImpl, JobDAOImpl, Schemes, ServiceDAOImpl, TagDAOImpl, TelegramDAOImpl, UserDAOImpl}
 import ru.tinkoff.coursework.sentry.entities.{FailureEntity, JobEntity, ServiceEntity, TagEntity, UserEntity}
 import ru.tinkoff.coursework.sentry.services.{FailureServiceImpl, JobServiceImpl, ServiceServiceImpl, TagServiceImpl, UserServiceImpl}
 
@@ -8,7 +10,13 @@ import java.sql.Timestamp
 import java.time.LocalDateTime
 
 object ServicesDemo extends IOApp {
-  val database = new SentryDatabaseImpl
+  val database = new Schemes(xa)
+  val failureDAO: FailureDAOImpl = new FailureDAOImpl(xa)
+  val jobDAO: JobDAOImpl = new JobDAOImpl(xa)
+  val serviceDAO: ServiceDAOImpl = new ServiceDAOImpl(xa)
+  val tagDAO: TagDAOImpl = new TagDAOImpl(xa)
+  val telegramDAO: TelegramDAOImpl = new TelegramDAOImpl(xa)
+  val userDAO: UserDAOImpl = new UserDAOImpl(xa)
   val schemes: IO[Unit] = for {
     _ <- database.dropTables
     _ <- database.userScheme
@@ -22,12 +30,12 @@ object ServicesDemo extends IOApp {
     _ <- database.userWithTelegramChatScheme
   } yield ()
 
-  val alertManager: AlertManager = new AlertManagerImpl(database)
-  val failureService = new FailureServiceImpl(database, alertManager)
-  val userService = new UserServiceImpl(database)
-  val serviceService = new ServiceServiceImpl(database)
-  val tagService = new TagServiceImpl(database)
-  val jobService = new JobServiceImpl(database)
+  val alertManager: AlertManager = new AlertManagerImpl(serviceDAO, tagDAO, userDAO, telegramDAO)
+  val failureService = new FailureServiceImpl(failureDAO, alertManager)
+  val userService = new UserServiceImpl(userDAO)
+  val serviceService = new ServiceServiceImpl(Sentry.serviceDAO)
+  val tagService = new TagServiceImpl(tagDAO)
+  val jobService = new JobServiceImpl(jobDAO)
 
   override def run(args: List[String]): IO[ExitCode] = {
     val demoId1 = 1
@@ -44,7 +52,7 @@ object ServicesDemo extends IOApp {
     val farFutureTime = Timestamp.valueOf(LocalDateTime.now().plusSeconds(10))
     val pastTime = Timestamp.valueOf(LocalDateTime.now().minusSeconds(5))
     val demoService = ServiceEntity(1, demoURL)
-    val demoFailure = FailureEntity(1, demoURL, " Epic failure. Hacker is n00b1e", currentTime)
+    val demoFailure = FailureEntity(demoURL, " Epic failure. Hacker is n00b1e", currentTime)
     val demoTag = TagEntity("DemoTag")
     val demoJob = JobEntity(1,1,"demo job",pastTime,futureTime)
     val demoJobPlanning = JobEntity(2,1,"future demo job",futureTime,farFutureTime)

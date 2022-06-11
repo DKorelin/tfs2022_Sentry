@@ -1,15 +1,15 @@
 package ru.tinkoff.coursework.sentry.services
 
 import cats.effect.IO
-import ru.tinkoff.coursework.sentry.database.{JobDAO, SentryDatabase, ServiceDAO, TagDAO, UserDAO}
+import ru.tinkoff.coursework.sentry.database.{FailureDAO, JobDAO, ServiceDAO, TagDAO, TelegramDAO, UserDAO}
 import ru.tinkoff.coursework.sentry.entities.{FailureEntity, JobEntity, ServiceEntity, UserEntity}
 
 import java.sql.Timestamp
-import scala.collection.mutable.ListBuffer
+import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 
-object DatabaseMock extends SentryDatabase with JobDAO with ServiceDAO with TagDAO with UserDAO{
+object DatabaseMock extends FailureDAO with JobDAO with ServiceDAO with TagDAO with UserDAO with TelegramDAO{
   var listOfJobs: ListBuffer[JobEntity] = scala.collection.mutable.ListBuffer[JobEntity]()
-  var listOfFailures: ListBuffer[FailureEntity] = scala.collection.mutable.ListBuffer[FailureEntity]()
+  var listOfFailures: ArrayBuffer[FailureEntity] = scala.collection.mutable.ArrayBuffer[FailureEntity]()
   var listOfServices: ListBuffer[ServiceEntity] = scala.collection.mutable.ListBuffer[ServiceEntity]()
   var listOfUsers: ListBuffer[UserEntity] = scala.collection.mutable.ListBuffer[UserEntity]()
   var userServicesMap = scala.collection.mutable.HashMap.empty[Long,Long]
@@ -31,9 +31,9 @@ object DatabaseMock extends SentryDatabase with JobDAO with ServiceDAO with TagD
     true
   }
 
-  override def createFailure(failure: FailureEntity): IO[Boolean] = IO {
+  override def createFailure(failure: FailureEntity): IO[Long] = IO {
     listOfFailures = failure +: listOfFailures
-    true
+    listOfFailures.size - 1
   }
 
   override def createServiceTag(serviceId: Long, tag: String): IO[Boolean] = IO{
@@ -56,7 +56,7 @@ object DatabaseMock extends SentryDatabase with JobDAO with ServiceDAO with TagD
   }
 
   override def findFailureById(id: Long): IO[Option[FailureEntity]] = IO{
-    listOfFailures.find(failureEntity => failureEntity.failureId == id)
+    Some(listOfFailures.apply(id.toInt))
   }
 
   override def findJobById(id: Long): IO[Option[JobEntity]] = IO{
@@ -99,5 +99,7 @@ object DatabaseMock extends SentryDatabase with JobDAO with ServiceDAO with TagD
 
   override def bindUserWithTelegramChat(sentryId: Long, chatId: Long): IO[Boolean] = ???
 
-  override def getChatByUserId(userId: Long): IO[Long] = ???
+  override def getChatByUserId(userId: Long): IO[Option[Long]] = ???
+
+  override def getUserIdByChat(chatId: Long): IO[Option[Long]] = ???
 }

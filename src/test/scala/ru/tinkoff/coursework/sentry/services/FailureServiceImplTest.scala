@@ -2,6 +2,7 @@ package ru.tinkoff.coursework.sentry.services
 import cats.effect.unsafe.implicits.global
 import org.scalatest.funsuite.AsyncFunSuite
 import ru.tinkoff.coursework.sentry.entities.{FailureEntity, ServiceEntity}
+
 import java.sql.Timestamp
 import java.time.LocalDateTime
 
@@ -12,8 +13,8 @@ class FailureServiceImplTest extends AsyncFunSuite {
   val testService: ServiceEntity = ServiceEntity(testServiceId,testURL)
   val testTime: Timestamp = Timestamp.valueOf(LocalDateTime.parse("2007-12-03T10:15:30"))
   val testDescription = " Epic failure. Hacker is n00b1e"
-  val expectedFailure: FailureEntity = FailureEntity(testFailureId, testURL, testDescription, testTime)
-  val alertManagerMock = new AlertManagerMock(DatabaseMock)
+  val expectedFailure: FailureEntity = FailureEntity(testURL, testDescription, testTime)
+  val alertManagerMock = new AlertManagerMock
 
   test("test recordFailure") {
     val failureService = new FailureServiceImpl(DatabaseMock, alertManagerMock)
@@ -28,8 +29,8 @@ class FailureServiceImplTest extends AsyncFunSuite {
     val failureService = new FailureServiceImpl(DatabaseMock, alertManagerMock)
     val testBody = for {
       _ <- DatabaseMock.createService(testService)
-      _ <- failureService.recordFailure(expectedFailure)
-      receivedFailure <- failureService.findFailure(expectedFailure.failureId)
+      id <- failureService.recordFailure(expectedFailure)
+      receivedFailure <- failureService.findFailure(id)
     } yield assert(receivedFailure.contains(expectedFailure))
     testBody.unsafeRunSync()
   }

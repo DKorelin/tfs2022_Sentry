@@ -1,28 +1,17 @@
 package ru.tinkoff.coursework.sentry.services
 
 import cats.effect.IO
-import ru.tinkoff.coursework.sentry.ServiceIdNotFoundException
 import ru.tinkoff.coursework.sentry.alertManager.AlertManager
-import ru.tinkoff.coursework.sentry.entities.{FailureEntity, UserEntity}
-import ru.tinkoff.coursework.sentry.database.SentryDatabase
+import ru.tinkoff.coursework.sentry.entities.FailureEntity
+import ru.tinkoff.coursework.sentry.database.FailureDAO
 
-import java.sql.Timestamp
-import java.time.LocalDateTime
+class FailureServiceImpl(failureDAO: FailureDAO, alertManager: AlertManager) extends FailureService {
+  override def findFailure(id: Long):IO[Option[FailureEntity]] = failureDAO.findFailureById(id:Long)
 
-
-class FailureServiceImpl(db: SentryDatabase, alertManager: AlertManager) extends FailureService {
-  def findFailure(id: Long):IO[Option[FailureEntity]] = db.findFailureById(id:Long)
-
-
-  def recordFailure(failureEvent: FailureEntity):IO[Boolean] = {
+  override def recordFailure(failureEvent: FailureEntity):IO[Long] = {
     for {
-      writeResult <- db.createFailure(failureEvent)
-      serviceId <- db.getServiceId(failureEvent.URL)
-      _ <- serviceId match {
-        case Some(serviceId) => alertManager.alertSubscribers(serviceId, failureEvent)
-        case None => throw ServiceIdNotFoundException()
-      }
+      writeResult <- failureDAO.createFailure(failureEvent)
+      _ <- alertManager.alertSubscribers(failureEvent)
     } yield writeResult
-
   }
 }

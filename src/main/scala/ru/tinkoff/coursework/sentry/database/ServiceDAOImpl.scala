@@ -15,7 +15,7 @@ import ru.tinkoff.coursework.sentry.entities.ServiceEntity
 class ServiceDAOImpl(xa: Aux[IO, Unit]) extends ServiceDAO {
   override def findServiceById(id: Long): IO[Option[ServiceEntity]] = {
     sql"""SELECT serviceTable.serviceId, serviceTable.URL
-      FROM failureTable WHERE serviceTable.serviceId = $id"""
+      FROM serviceTable WHERE serviceTable.serviceId = $id"""
       .query[ServiceEntity]
       .option
       .transact(xa)

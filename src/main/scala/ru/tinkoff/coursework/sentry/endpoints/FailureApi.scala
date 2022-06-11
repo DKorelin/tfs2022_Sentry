@@ -10,9 +10,10 @@ import ru.tinkoff.coursework.sentry.entities.FailureEntity
 
 class FailureApi(failuresService: FailureService) {
 
-  implicit def failureEventEncoder: EntityEncoder[IO, FailureEntity] = jsonEncoderOf
+  implicit val failureEventEncoder: EntityDecoder[IO, FailureEntity] = jsonOf
 
-  implicit def failureEventDecoder: EntityDecoder[IO, FailureEntity] = jsonOf
+  implicit val failureEventDecoder: EntityEncoder[IO, FailureEntity] = jsonEncoderOf
+
 
   val failureRoutes: HttpRoutes[IO] = HttpRoutes.of[IO] {
     case GET -> Root / "failures" / LongVar(id) =>
@@ -21,7 +22,7 @@ class FailureApi(failuresService: FailureService) {
       for {
         failureEvent <- req.as[FailureEntity]
         recordResult <- failuresService.recordFailure(failureEvent)
-        resp <- Ok(recordResult)
+        resp <- Ok(s"failure registered as $recordResult.")
       } yield resp
   }
 }

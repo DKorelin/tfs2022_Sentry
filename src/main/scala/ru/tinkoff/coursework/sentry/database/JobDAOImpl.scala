@@ -47,7 +47,7 @@ class JobDAOImpl(xa: Aux[IO, Unit]) extends JobDAO {
 
   override def findJobById(id: Long): IO[Option[JobEntity]] = {
     sql"""SELECT jobTable.jobId, jobTable.serviceId, jobTable.description, jobTable.startTime, jobTable.endTime
-      FROM userTable WHERE jobTable.jobId = $id"""
+      FROM jobTable WHERE jobTable.jobId = $id"""
       .query[JobEntity]
       .option
       .transact(xa)

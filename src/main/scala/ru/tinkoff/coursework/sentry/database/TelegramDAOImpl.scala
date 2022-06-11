@@ -11,12 +11,21 @@ import doobie.implicits.javasql._
 import doobie.util.transactor.Transactor.Aux
 
 class TelegramDAOImpl(xa: Aux[IO, Unit]) extends TelegramDAO {
-  override def getChatByUserId(userId: Long): IO[Long] = {
+  override def getChatByUserId(userId: Long): IO[Option[Long]] = {
     sql"""SELECT userWithTelegramChatTable.chatId
        FROM userWithTelegramChatTable
        WHERE userWithTelegramChatTable.sentryId = $userId """
       .query[Long]
-      .unique
+      .option
+      .transact(xa)
+  }
+
+  override def getUserIdByChat(chatId: Long): IO[Option[Long]] = {
+    sql"""SELECT userWithTelegramChatTable.sentryId
+       FROM userWithTelegramChatTable
+       WHERE userWithTelegramChatTable.chatId = $chatId"""
+      .query[Long]
+      .option
       .transact(xa)
   }
 

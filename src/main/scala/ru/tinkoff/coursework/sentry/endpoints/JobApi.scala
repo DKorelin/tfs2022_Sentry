@@ -8,15 +8,17 @@ import org.http4s.dsl.io._
 import ru.tinkoff.coursework.sentry.entities.JobEntity
 import ru.tinkoff.coursework.sentry.services.JobServiceImpl
 
-class JobsApi(jobService: JobServiceImpl) {
+class JobApi(jobService: JobServiceImpl) {
   implicit def jobEncoder: EntityEncoder[IO, JobEntity] = jsonEncoderOf
 
   implicit def jobDecoder: EntityDecoder[IO, JobEntity] = jsonOf
 
-  val serviceRoutes: HttpRoutes[IO] = HttpRoutes.of[IO] {
+  object UserQueryParamMatcher extends QueryParamDecoderMatcher[Long]("user")
+
+  val jobRoutes: HttpRoutes[IO] = HttpRoutes.of[IO] {
     case GET -> Root / "jobs" / LongVar(id) =>
       jobService.findJob(id).flatMap(Ok(_))
-    case req@POST -> Root / "jobs" / LongVar(userId) =>
+    case req@POST -> Root / "jobs" :? UserQueryParamMatcher(userId) =>
       for {
         jobEntity <- req.as[JobEntity]
         recordResult <- jobService.createJob(userId, jobEntity)
